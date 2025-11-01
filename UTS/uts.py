@@ -3,12 +3,8 @@ import pandas as pd
 import plotly.express as px
 from pathlib import Path
 
-# =========================================================
-# KONFIGURASI DASAR
-# =========================================================
 st.set_page_config(page_title="Smart Retail Dashboard", layout="wide")
 
-# --- DARK MODE STYLE ---
 st.markdown("""
     <style>
         body {background-color: #0E1117; color: #FAFAFA;}
@@ -21,22 +17,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# =========================================================
-# FUNGSI MEMUAT DATA
-# =========================================================
 @st.cache_data
 def load_data():
     file_path = Path(__file__).parent / "Copy of finalProj_df - 2022.csv"  # pakai nama file yang kamu punya
     df = pd.read_csv(file_path)
 
-    # --- Format tanggal ---
     if "order_date" in df.columns:
         df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
         df["year"] = df["order_date"].dt.year
         df["month"] = df["order_date"].dt.strftime("%b")
         df["period"] = df["order_date"].dt.to_period("M")
 
-    # --- Hitung revenue & profit ---
     if "after_discount" in df.columns:
         df["revenue"] = df["after_discount"]
     elif "before_discount" in df.columns:
@@ -45,21 +36,13 @@ def load_data():
     if "cogs" in df.columns:
         df["profit"] = df["revenue"] - df["cogs"]
 
-    # --- Konversi qty_ordered ---
     if "qty_ordered" in df.columns:
         df["qty_ordered"] = pd.to_numeric(df["qty_ordered"], errors="coerce").fillna(0).astype(int)
 
     return df
 
-
-# =========================================================
-# MUAT DATASET
-# =========================================================
 df = load_data()
 
-# =========================================================
-# SIDEBAR NAVIGASI
-# =========================================================
 st.sidebar.title("🧭 Navigasi")
 page = st.sidebar.radio("Pilih Halaman:", [
     "📊 Analisis Penjualan Produk",
@@ -70,11 +53,9 @@ page = st.sidebar.radio("Pilih Halaman:", [
 st.sidebar.markdown("---")
 st.sidebar.header("⚙️ Filter Data")
 
-# --- Filter Tahun ---
 years = sorted(df["year"].dropna().unique().tolist())
 selected_years = st.sidebar.multiselect("📆 Pilih Tahun", years, default=years)
 
-# --- Filter Kategori ---
 st.sidebar.markdown("### 🏷️ Pilih Kategori Produk")
 categories = sorted(df["category"].dropna().unique().tolist())
 select_all_cats = st.sidebar.checkbox("Pilih Semua Kategori", value=True)
@@ -83,7 +64,6 @@ if select_all_cats:
 else:
     selected_cats = st.sidebar.multiselect("Pilih Kategori:", categories, default=[])
 
-# --- Filter Produk ---
 st.sidebar.markdown("### 🧾 Pilih Produk")
 products = sorted(df["sku_name"].dropna().unique().tolist())
 select_all_prods = st.sidebar.checkbox("Pilih Semua Produk", value=False)
@@ -92,7 +72,6 @@ if select_all_prods:
 else:
     selected_prods = st.sidebar.multiselect("Pilih Produk:", products, default=[])
 
-# --- Terapkan Filter ---
 filtered_df = df.copy()
 if selected_years:
     filtered_df = filtered_df[filtered_df["year"].isin(selected_years)]
@@ -101,11 +80,8 @@ if selected_cats:
 if selected_prods:
     filtered_df = filtered_df[filtered_df["sku_name"].isin(selected_prods)]
 
-# =========================================================
-# KPI / METRIK UTAMA
-# =========================================================
-st.title("📈 Smart Retail Dashboard – UTS VID A")
-st.caption("Kristian Dwitama Adiyaksa | 230712341")
+st.title("📈 Smart Retail Dashboard ")
+st.caption("UTS VID A | Kristian Dwitama Adiyaksa | 230712341")
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("💰 Total Revenue", f"Rp {filtered_df['revenue'].sum():,.0f}")
@@ -115,9 +91,6 @@ col4.metric("💹 Total Profit", f"Rp {filtered_df['profit'].sum():,.0f}")
 
 st.markdown("---")
 
-# =========================================================
-# HALAMAN 1️⃣ – ANALISIS PENJUALAN PRODUK
-# =========================================================
 if page == "📊 Analisis Penjualan Produk":
     st.header("📊 Analisis Penjualan Produk")
 
@@ -141,9 +114,6 @@ if page == "📊 Analisis Penjualan Produk":
         if all(c in filtered_df.columns for c in show_cols):
             st.dataframe(filtered_df[show_cols].sort_values("revenue", ascending=False).head(50))
 
-# =========================================================
-# HALAMAN 2️⃣ – ANALISIS TREN BULANAN
-# =========================================================
 elif page == "📈 Analisis Tren Bulanan":
     st.header("📈 Analisis Tren Bulanan")
 
@@ -176,9 +146,6 @@ elif page == "📈 Analisis Tren Bulanan":
         - Rata-rata profit bulanan: Rp {monthly['Profit'].mean():,.0f}
         """)
 
-# =========================================================
-# HALAMAN 3️⃣ – ANALISIS PELANGGAN
-# =========================================================
 elif page == "👥 Analisis Pelanggan":
     st.header("👥 Analisis Pelanggan")
 
